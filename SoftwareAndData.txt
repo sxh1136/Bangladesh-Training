@@ -1,0 +1,112 @@
+
+########### 1- Basic structures
+
+####Software:
+#movaXterm or VirtualBox with Ubuntu biolinux (http://environmentalomics.org/bio-linux/) if you use Windows
+#Make sure it has nano available
+#R
+
+
+########### 2- RawDataManipulation
+
+####Software:
+#fastqc
+#Trimmomatic
+#prinseq-lite
+
+####Data:
+#Zeale files from Alberdi's (2017) study: https://datadryad.org/bitstream/handle/10255/dryad.150245/zeale_PCR1_PE1.fastq.gz?sequence=1 https://datadryad.org/bitstream/handle/10255/dryad.150245/zeale_PCR1_PE2.fastq.gz?sequence=1
+
+
+########### 3.1- Mapping
+
+####Software:
+#picard-tools
+#samtools
+#bwa
+#GenomeAnalysisTK
+#bedtools
+#bamtools
+
+
+
+####Data:
+#One Vampire cleaned sample to map with MGmapper: https://sid.erda.dk/wsgi-bin/ls.py?share_id=biik3KGgru;current_dir=DESR;flags=f/DR_554.cleaned.R1.fastq.gz https://sid.erda.dk/wsgi-bin/ls.py?share_id=biik3KGgru;current_dir=DESR;flags=f/DR_554.cleaned.R2.fastq.gz
+#Genome Escherichia albertii KF1: https://www.ncbi.nlm.nih.gov/genome/?term=Escherichia+albertii+KF1
+#Genome human: https://www.ncbi.nlm.nih.gov/genome/?term=homo+sapiens
+
+
+https://sid.erda.dk/wsgi-bin/ls.py?share_id=biik3KGgru
+
+########### 3.2- Assembly
+
+####Software:
+#IDBA-UD
+#assemblathon_stats.pl, FAlite.pm
+#Optional: metaSPAdes, MetaVelvet, MegaHit, Ray_Meta, SOAPdenovo2
+
+
+####Data:
+#One Vampire cleaned sample to map with MGmapper: https://sid.erda.dk/wsgi-bin/ls.py?share_id=biik3KGgru;current_dir=DESR;flags=f/DR_554.cleaned.R1.fastq.gz https://sid.erda.dk/wsgi-bin/ls.py?share_id=biik3KGgru;current_dir=DESR;flags=f/DR_554.cleaned.R2.fastq.gz
+
+
+
+########### 3.3- GenePredictionAndAnnotation
+
+####Software:
+#prodigal
+#MEGAN6 
+#The NCBI tax id relational files 
+
+####Data:
+#Speleothem dataset: https://sid.erda.dk/sharelink/brrkkVk3yQ
+
+
+########### 3.4- MetagenomicsSpeciesConcept
+
+####Software:
+#CanopyClustering: http://www.cbs.dtu.dk/databases/CAG/
+
+####Data:
+#An OTU table: https://sid.erda.dk/sharelink/dyU06JNkbr  (ClassicOTUtable_short_2.txt and otu_table_withTaxonomy_fixed_L2.txt)
+
+
+
+########### 4.2- GeneralCharacterization
+
+####Software:
+#R packages: vegan, scatterplot3d, rgl, shapes, ggplot2
+
+
+####Data:
+#Bacterial identifications vampires: https://sid.erda.dk/sharelink/DbAa8w08nz
+
+
+########### 4.3- Pathways
+
+####Data:
+#Speleothems annotations: https://sid.erda.dk/sharelink/brrkkVk3yQ
+
+
+
+########### 5.1- stats
+
+####Software:
+#R packages: MASS, vegan, cluster
+
+
+########### 5.2- DAMe and QIIME2
+
+####Software:
+#DAMe (https://github.com/lisandracady/DAMe)
+#AdapterRemoval
+#QIIME2 (I recommend the QIIME Virtual Box http://qiime.org/install/virtual_box.html) or local install if you have mac/ubuntu (https://docs.qiime2.org/2018.11/install/native/)
+
+####Data:
+#Antton's Zeale data: http://datadryad.org/resource/doi:10.5061/dryad.g14k2
+#Moving pictures qiime tutorial: https://data.qiime2.org/2018.11/tutorials/moving-pictures/sample_metadata.tsv
+https://data.qiime2.org/2018.11/tutorials/moving-pictures/emp-single-end-sequences/barcodes.fastq.gz
+https://data.qiime2.org/2018.11/tutorials/moving-pictures/emp-single-end-sequences/sequences.fastq.gz
+https://data.qiime2.org/2018.11/common/gg-13-8-99-515-806-nb-classifier.qza
+
+
