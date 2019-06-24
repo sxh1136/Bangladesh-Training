@@ -1,0 +1,24 @@
+###DATA: 
+#wget -r https://sid.erda.dk/sharelink/brrkkVk3yQ .
+#https://sid.erda.dk/share_redirect/brrkkVk3yQ/Basal/Scaffolds_Paula_TJD1_Ray-21kmers.fas specifically
+
+
+cd
+mkdir Exercises/3.3-GenePrediction
+cd Exercises/3.3-GenePrediction
+
+prodigal -p meta -i /home/manager/Data/Speleothem_dataset/Basal/Scaffolds_Paula_TJD1_Ray-21kmers.fas -a aa_file -d nt_file > prodigal.outlog
+
+
+grep "^>" nt_file | wc -l
+#80393
+
+##Try using the output into BlastKOALA and eggNOG-mapper online
+
+
+#### MEGAN
+#Examine a blast search in MEGAN6 (the vulture gut sample m8 file)
+
+
+
+

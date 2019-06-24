@@ -1,0 +1,145 @@
+
+##########DATA
+
+#%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+#Download dataset one Vampire cleaned sample
+#https://sid.erda.dk/wsgi-bin/ls.py?share_id=biik3KGgru;current_dir=DESR;flags=f 
+#wget https://sid.erda.dk/share_redirect/biik3KGgru/DESR/DR_554.cleaned.R1.fastq.gz
+#wget https://sid.erda.dk/share_redirect/biik3KGgru/DESR/DR_554.cleaned.R2.fastq.gz
+#Genome Escherichia albertii KF1: https://www.ncbi.nlm.nih.gov/genome/?term=Escherichia+albertii+KF1
+#Genome human: https://www.ncbi.nlm.nih.gov/genome/?term=homo+sapiens
+#%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+##########CMMNDS
+
+##### Index
+
+
+gunzip /home/manager/Data/E_albertii_genome/GCF_000512125.1_ASM51212v1_genomic.fna.gz
+mv /home/manager/Data/E_albertii_genome/GCF_000512125.1_ASM51212v1_genomic.fna /home/manager/Data/E_albertii_genome/Ealbertii_genome.fasta
+
+ls /home/manager/Data/E_albertii_genome/
+
+cd /home/manager/Exercises
+mkdir 3.1-Mapping
+cd 3.1-Mapping
+
+nano index.sh
+java -jar /home/manager/Software/PicardTools/picard.jar CreateSequenceDictionary REFERENCE=${1}.fasta OUTPUT=${1}.dict
+samtools faidx ${1}.fasta 
+bwa index ${1}.fasta
+
+
+#CTRL-X
+
+
+#We index the genomes to make them "searchable" and quickly accessible for the programs
+
+sh index.sh /home/manager/Data/E_albertii_genome/Ealbertii_genome
+
+ls /home/manager/Data/E_albertii_genome/
+
+
+
+##### Map #Explain them the code (flags) and let them modify it for their cleaned data at hand... they shall map it vs the human genome 
+
+#Ask them to keep the UNMAPPED ones
+#-F0x4 = don't keep the unmapped ones (i.e. keep the MAPPED ones)
+#Check out these flag cheat sheet: https://www.biostars.org/p/56246/
+
+
+bwa aln /home/manager/Data/E_albertii_genome/Ealbertii_genome.fasta /home/manager/Data/Vampire_dataset/DR_554.cleaned.R1.fastq.gz > DR_554.cleaned.R1.sai
+
+bwa aln /home/manager/Data/E_albertii_genome/Ealbertii_genome.fasta /home/manager/Data/Vampire_dataset/DR_554.cleaned.R2.fastq.gz > DR_554.cleaned.R2.sai
+
+bwa sampe /home/manager/Data/E_albertii_genome/Ealbertii_genome.fasta DR_554.cleaned.R1.sai DR_554.cleaned.R2.sai /home/manager/Data/Vampire_dataset/DR_554.cleaned.R1.fastq.gz /home/manager/Data/Vampire_dataset/DR_554.cleaned.R2.fastq.gz | samtools view -bSh -F0x4 - > DR_554.bam
+
+samtools sort DR_554.bam   DR_554.sort
+
+
+##### Clean mapping
+
+echo "################### Mapping stats ################## " > DESR_REPT.txt
+echo "First mapping\n" >> DESR_REPT.txt
+samtools flagstat DR_554.sort.bam >> DESR_REPT.txt
+samtools view -c DR_554.sort.bam
+
+#Remove PCR duplicates (clonality)
+samtools rmdup -sS DR_554.sort.bam DR_554.NoClon.bam 
+
+#Fix the mates flags in case they were messed up
+samtools sort -n DR_554.NoClon.bam DR_554.NoClon.nameSrt
+samtools fixmate DR_554.NoClon.nameSrt.bam DR_554.NoClon.fixMate.bam
+samtools view -bF 4 -q 1 DR_554.NoClon.fixMate.bam > DR_554.NoClon.FIXedMate.bam
+samtools sort DR_554.NoClon.FIXedMate.bam DR_554.NoClon.FIXedMate.sort
+
+#You can also remove duplicates with picard:
+#java -jar /home/manager/Software/PicardTools/picard.jar MarkDuplicates I=DR_554.NoClon.FIXedMate.sort.bam O=DR_554.NoClon.SignDup.bam AS=TRUE 
+#samtools index DR_554.NoClon.SignDup.bam
+
+samtools view -b -F1024 DR_554.NoClon.FIXedMate.sort.bam > DR_554.Mkdup.NoClon.bam
+echo "After marking duplicates and clonality" >> DESR_REPT.txt
+samtools index DR_554.Mkdup.NoClon.bam
+samtools flagstat DR_554.Mkdup.NoClon.bam >> DESR_REPT.txt
+
+#Realignment:
+java -jar /home/manager/Software/PicardTools/picard.jar AddOrReplaceReadGroups I=DR_554.Mkdup.NoClon.bam O=DR_554.Mkdup.NoClon.RG.bam LB=DE PL=illumina PU=DE SM=DE
+samtools index DR_554.Mkdup.NoClon.RG.bam
+GenomeAnalysisTK.jar -T RealignerTargetCreator -R /home/manager/Data/E_albertii_genome/Ealbertii_genome.fasta -I DR_554.Mkdup.NoClon.RG.bam -o DR_554.Real.intervals 
+GenomeAnalysisTK.jar -T IndelRealigner -R /home/manager/Data/E_albertii_genome/Ealbertii_genome.fasta -I DR_554.Mkdup.NoClon.RG.bam -targetIntervals DR_554.Real.intervals -o DR_554.realigned.bam 
+
+samtools sort DR_554.realigned.bam DR_554.realigned.sort
+samtools index DR_554.realigned.sort.bam
+echo "Mapped reads average length" >> DESR_REPT.txt
+samtools view DR_554.realigned.sort.bam | awk '{SUM+=length($10);DIV++}END{print SUM/DIV}' >> DESR_REPT.txt
+
+
+###########Tips and tricks
+
+# Transform from sam to bam
+samtools view -bS aln.sam > aln.bam
+
+#From sam/bam to fastq
+nice java -jar picard-tools-*.*/SamToFastq.jar I=temp.bam  F=unmapped.fastq
+
+
+
+##### Coverage
+
+#Well.. there are many ways..
+
+
+#One way is the next:
+samtools depth DR_554.realigned.sort.bam  > temp.coverage
+#bamtools coverage -in DR_554.realigned.sort.bam  > temp.coverage
+echo "Av.Depth of the mapped regions" >> DESR_REPT.txt
+echo "scale=4; `grep -v -P '\t0' temp.coverage | awk '{sum+=$3} END {print sum}'`/`grep -v -P '\t0' temp.coverage | wc -l `" | bc >> DESR_REPT.txt
+echo "Av.Depth of the whole genome" >> DESR_REPT.txt
+echo "scale=4; `grep -v -P '\t0' temp.coverage | awk '{sum+=$3} END {print sum}'`/`awk '{sum+=$2} END {print sum}' Ealbertii_genome.fasta.fai `" | bc >> DESR_REPT.txt
+echo "Breth of coverage" >> DESR_REPT.txt
+echo "scale=4; `grep -v -P '\t0' temp.coverage | wc -l`/`awk '{sum+=$2} END {print sum}' /home/manager/Data/E_albertii_genome/Ealbertii_genome.fasta.fai`" | bc >> DESR_REPT.txt
+mv temp.coverage DESR.realigned.sort.coverage
+
+
+# There's also GATK
+GenomeAnalysisTK.jar -T DepthOfCoverage -R /home/manager/Data/E_albertii_genome/Ealbertii_genome.fasta -I DR_554.realigned.sort.bam  -o DESR.DOC
+
+# Get coverage with bedTools
+genomeCoverageBed -ibam DR_554.realigned.sort.bam -g /home/manager/Data/E_albertii_genome/Ealbertii_genome.fasta  -bga > DESR.cov1.bed
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

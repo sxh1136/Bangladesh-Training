@@ -1,0 +1,77 @@
+#The data is in:
+#/home/projects/ku_10004/people/lzepeda/Vampires/DESR/DR_554
+#https://sid.erda.dk/wsgi-bin/ls.py?share_id=biik3KGgru
+
+
+###################### de novo assembly
+
+
+mkdir /home/manager/Exercises/3.2-Assembly
+cd /home/manager/Exercises/3.2-Assembly
+
+gunzip /home/manager/Data/Vampire_dataset/DR_554.cleaned.R*.fastq.gz
+
+fq2fa --filter --paired --merge /home/manager/Data/Vampire_dataset/DR_554.cleaned.R1.fastq /home/manager/Data/Vampire_dataset/DR_554.cleaned.R2.fastq  interleaved_DR_554.fa
+idba_ud  -r interleaved_DR_554.fa -o idba_ud_assembly
+
+
+######Get your assembly stats
+
+assemblathon_stats.pl idba_ud_assembly/contig-60.fa
+
+
+######Extra exercises
+
+####Look at SupplFiles/3.2.3-CmndsForRunningTheTestedAssemblers.pdf
+
+#Try them if you want :)
+
+##metaSpades
+
+
+#nano input.yaml
+[ { orientation: "fr", type: "paired-end", left reads: [ "/home/manager/Data/Vampire_dataset/DR_554.cleaned.R1.fastq" ], right reads: [ "/home/manager/Data/Vampire_dataset/DR_554.cleaned.R2.fastq" ] } ]
+
+
+spades.py -k 21,31,41,51,61,71,81,91,101 --meta --dataset input.yaml -o metaSpades_results
+
+
+megahit --k-min 21 --k-max 101 --k-step 10 -m 0.2 -1 /home/manager/Data/Vampire_dataset/DR_554.cleaned.R1.fastq -2 /home/manager/Data/Vampire_dataset/DR_554.cleaned.R2.fastq
+
+
+
+velveth assemblyVelvet_101 101 -shortPaired -fastq -separate /home/manager/Data/Vampire_dataset/DR_554.cleaned.R1.fastq /home/manager/Data/Vampire_dataset/DR_554.cleaned.R2.fastq
+
+velvetg assemblyVelvet_101 -ins_length 350 -ins_length_sd 200 -exp_cov auto 
+
+meta-velvetg assemblyVelvet_101 -ins_length 350 -ins_length_sd 200 -scaffolding yes
+
+
+
+
+mpiexec -H localhost Ray -k 101 -p /home/manager/Data/Vampire_dataset/DR_554.cleaned.R1.fastq /home/manager/Data/Vampire_dataset/DR_554.cleaned.R2.fastq -o assemblyRayMeta
+
+
+#nano soap2.config
+max_rd_len=600[LIB]avg_ins=350reverse_seq=0asm_flags=3rank=1map_len=100pair_num_cutoff=2q1=/home/manager/Data/Vampire_dataset/DR_554.cleaned.R1.fastq
+q2=/home/manager/Data/Vampire_dataset/DR_554.cleaned.R2.fastq
+
+
+/home/manager/Software/SOAPdenovo2/SOAPdenovo-127mer all -o assemblySOAPdenovo -s soap2.config -K 101 -M 3 -d 1 -R -F
+
+
+
+####Read and understand supple Files 3.2.1 and 3.2.2 too. Ask questions if in doubt of anything.
+
+
+
+
+
+
+
+
+
+
+
+
+
